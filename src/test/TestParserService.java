@@ -8,8 +8,6 @@ import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.*;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
