@@ -73,7 +73,10 @@
                     <version>2.7</version>
                     <configuration>
                         <check>true</check>
-                        <format>xml</format>
+                        <formats>
+                            <format>html</format>
+                            <format>xml</format>
+                        </formats>
                         <aggregate>true</aggregate>
                     </configuration>
                 </plugin>
