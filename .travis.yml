@@ -2,7 +2,8 @@ language: java
 jdk:
   - openjdk7
 
-script: mvn cobertura:cobertura coveralls:report -DrepoToken=$coverallsToken
+after_success:
+  - mvn cobertura:cobertura coveralls:report -DrepoToken=$coverallsToken
 
 deploy:
   provider: heroku
