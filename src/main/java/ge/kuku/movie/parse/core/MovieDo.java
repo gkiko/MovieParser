@@ -1,7 +1,6 @@
 package ge.kuku.movie.parse.core;
 
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
@@ -9,6 +8,9 @@ public class MovieDo {
 
     @NotNull
     private String name;
+
+    private String id;
+    private String source;
 
     public String getName() {
         return name;
