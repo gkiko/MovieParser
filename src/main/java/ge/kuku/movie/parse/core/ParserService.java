@@ -25,9 +25,10 @@ public class ParserService {
         if (res == null) {
             throw new WebApplicationException(400);
         }
-        MovieDo found = new MovieDo();
-        found.setName("asd");
-        return found;
+        movieDo.setName(res);
+        movieDo.setId(id);
+        movieDo.setSource(res);
+        return movieDo;
     }
 
 }

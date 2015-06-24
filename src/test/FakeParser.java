@@ -4,6 +4,6 @@ public class FakeParser implements Parser {
 
     @Override
     public String parse() {
-        return "";
+        return "asd";
     }
 }
