@@ -1,5 +1,6 @@
 package ge.kuku.movie.parse.data;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,9 +17,9 @@ public class CompositeParser implements Parser {
     }
 
     @Override
-    public String parse() {
+    public String parse(String movieName, String imdbId) throws IOException {
         for (Parser parser : childParsers) {
-            String res = parser.parse();
+            String res = parser.parse(movieName, imdbId);
             if (res != null) {
                 return res;
             }

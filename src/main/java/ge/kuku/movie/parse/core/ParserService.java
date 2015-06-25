@@ -8,6 +8,7 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 
 @Path("parse")
 @Consumes({MediaType.APPLICATION_JSON})
@@ -20,12 +21,12 @@ public class ParserService {
 
     @POST
     @Path("{id}")
-    public MovieDo parse(@PathParam("id") String id, @NotNull @Valid MovieDo movieDo) {
-        String res = getParser().parse();
+    public MovieDo parse(@PathParam("id") String id, @NotNull @Valid MovieDo movieDo) throws IOException {
+        String res = getParser().parse(movieDo.getName(), id);
         if (res == null) {
-            throw new WebApplicationException(400);
+            throw new WebApplicationException(404);
         }
-        movieDo.setName(res);
+        movieDo.setName(movieDo.getName());
         movieDo.setId(id);
         movieDo.setSource(res);
         return movieDo;
