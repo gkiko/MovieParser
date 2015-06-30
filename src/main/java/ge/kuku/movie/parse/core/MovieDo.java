@@ -9,7 +9,7 @@ public class MovieDo {
     @NotNull
     private String name;
 
-    private String id;
+    private String imdbId;
     private String source;
 
     public String getName() {
@@ -20,12 +20,12 @@ public class MovieDo {
         this.name = name;
     }
 
-    public String getId() {
-        return id;
+    public String getImdbId() {
+        return imdbId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setImdbId(String imdbId) {
+        this.imdbId = imdbId;
     }
 
     public String getSource() {

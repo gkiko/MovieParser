@@ -27,7 +27,7 @@ public class ParserService {
             throw new WebApplicationException(404);
         }
         movieDo.setName(movieDo.getName());
-        movieDo.setId(id);
+        movieDo.setImdbId(id);
         movieDo.setSource(res);
         return movieDo;
     }
