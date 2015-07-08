@@ -1,5 +1,7 @@
 package ge.kuku.movie.parse.data;
 
+import ge.kuku.movie.parse.core.MovieDo;
+
 public class ImoviesEntity {
     private String imoviesId;
     private String imdbId;
@@ -54,5 +56,14 @@ public class ImoviesEntity {
 
     public void setSource(String source) {
         this.source = source;
+    }
+
+    public MovieDo toMovieDo() {
+        MovieDo movieDo = new MovieDo();
+        movieDo.setSource(source);
+        movieDo.setLanguage(language);
+        movieDo.setQuality(quality);
+
+        return movieDo;
     }
 }

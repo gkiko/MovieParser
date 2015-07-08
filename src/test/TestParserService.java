@@ -1,6 +1,7 @@
 import ge.kuku.movie.parse.core.MovieDo;
 import ge.kuku.movie.parse.core.ParserService;
 import ge.kuku.movie.parse.data.CompositeParser;
+import ge.kuku.movie.parse.data.ImoviesEntity;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.junit.Rule;
@@ -11,6 +12,8 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,11 +44,13 @@ public class TestParserService extends JerseyTest {
     @Test
     public void correctParams() {
         CompositeParser.instance().removeAll();
-        CompositeParser.instance().add(new FakeParser());
+        FakeParser parser = new FakeParser();
+        parser.addItem("Interstellar", new ImoviesEntity());
+        CompositeParser.instance().add(parser);
 
         MovieDo mDo = new MovieDo();
         mDo.setName("Interstellar");
-        MovieDo actual = target("parse/tt0816692").request().post(Entity.entity(mDo, MediaType.APPLICATION_JSON)).readEntity(MovieDo.class);
-        assertFalse(actual.getName().isEmpty());
+        MovieDo[] actual = target("parse/tt0816692").request().post(Entity.entity(mDo, MediaType.APPLICATION_JSON)).readEntity(MovieDo[].class);
+        assertFalse(actual.length == 0);
     }
 }

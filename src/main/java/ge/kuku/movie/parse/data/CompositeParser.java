@@ -17,9 +17,9 @@ public class CompositeParser implements Parser {
     }
 
     @Override
-    public String parse(String movieName, String imdbId) throws IOException {
+    public List parse(String movieName, String imdbId) throws IOException {
         for (Parser parser : childParsers) {
-            String res = parser.parse(movieName, imdbId);
+            List res = parser.parse(movieName, imdbId);
             if (res != null) {
                 return res;
             }
