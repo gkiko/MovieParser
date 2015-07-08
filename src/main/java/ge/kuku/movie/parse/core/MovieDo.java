@@ -10,6 +10,8 @@ public class MovieDo {
     private String name;
 
     private String imdbId;
+    private String language;
+    private String quality;
     private String source;
 
     public String getName() {
@@ -34,5 +36,21 @@ public class MovieDo {
 
     public void setSource(String source) {
         this.source = source;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public String getQuality() {
+        return quality;
+    }
+
+    public void setQuality(String quality) {
+        this.quality = quality;
     }
 }

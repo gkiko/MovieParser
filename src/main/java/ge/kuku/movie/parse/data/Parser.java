@@ -1,8 +1,9 @@
 package ge.kuku.movie.parse.data;
 
 import java.io.IOException;
+import java.util.List;
 
 public interface Parser {
 
-    String parse(String movieName, String imdbId) throws IOException;
+    List parse(String movieName, String imdbId) throws IOException;
 }
