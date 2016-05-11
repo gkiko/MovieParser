@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.apache.commons.codec.Charsets;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -11,6 +13,8 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -18,8 +22,11 @@ import java.util.regex.Pattern;
 
 public class ImoviesParser implements Parser {
 
-    private String jsonApi = "http://www.imovies.ge/services/films/search_new.json.php?term=";
-    private String rssApi = "http://www.imovies.ge/get_playlist_jwQ_html5.php";
+    private static final String JSONAPI = "http://www.imovies.ge/services/films/search_new.json.php?term=";
+    private static final String RSSAPI = "http://www.imovies.ge/get_playlist_jwQ_html5.php";
+    private static final Pattern containsAllRecords = Pattern.compile(".*<jwplayer:source.*");
+    private static final Pattern containsVideoLangData = Pattern.compile("(?<=lang=\\\")((.*?)(?=\\\"))");
+    private static final Pattern containsQualityData = Pattern.compile("(?<=label=\\\")((.*?)(?=\\\"))");
 
     @Override
     public List parse(String movieName, String imdbId) throws IOException {
@@ -32,7 +39,9 @@ public class ImoviesParser implements Parser {
 
     private List<String> possibleUrlsContaining(String movieName) throws IOException {
         List<String> urls = new ArrayList<>();
-        URL url = new URL(jsonApi+movieName.toLowerCase());
+
+        String urlString = String.format("%s%s", JSONAPI, URLEncoder.encode(movieName, "UTF-8"));
+        URL url = new URL(urlString);
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode actualObj = mapper.readTree(url.openStream());
@@ -59,7 +68,7 @@ public class ImoviesParser implements Parser {
         for (Element link : links) {
             String strLink = link.attr("href");
             if (strLink.contains("imdb.com/title")) {
-                String foundId = strLink.substring(strLink.lastIndexOf("/")+1);
+                String foundId = strLink.substring(strLink.lastIndexOf("/") + 1);
                 if (foundId.equals(imdbId)) {
                     return true;
                 }
@@ -70,24 +79,19 @@ public class ImoviesParser implements Parser {
 
     private String getImoviesId(String pageUrl) {
         if (pageUrl == null) return null;
-        int idIndex = pageUrl.lastIndexOf("/") + 1;
-        return pageUrl.substring(idIndex);
+        return pageUrl.substring(pageUrl.lastIndexOf("/") + 1);
     }
 
     private List parseRss(String imoviesId) {
         List res = null;
         try {
-            String rssText = Unirest.get(rssApi).queryString("movie_id",imoviesId).asString().getBody();
+            String rssText = Unirest.get(RSSAPI).queryString("movie_id", imoviesId).asString().getBody();
             res = getSources(rssText);
         } catch (UnirestException e) {
             e.printStackTrace();
         }
         return res;
     }
-
-    Pattern containsAllRecords = Pattern.compile(".*<jwplayer:source.*");
-    Pattern containsVideoLangData = Pattern.compile("(?<=lang=\\\")((.*?)(?=\\\"))");
-    Pattern containsQualityData = Pattern.compile("(?<=label=\\\")((.*?)(?=\\\"))");
 
     private List getSources(String rssContent) {
         List<ImoviesEntity> movieList = new ArrayList<>();
@@ -123,6 +127,8 @@ public class ImoviesParser implements Parser {
             String[] arr = langAndSource.split("\\|");
             String language = arr[0];
             String videoSrc = arr[1];
+            videoSrc = StringEscapeUtils.unescapeXml(videoSrc);
+
             ImoviesEntity imoviesEntity = new ImoviesEntity();
             imoviesEntity.setLanguage(language);
             imoviesEntity.setSource(videoSrc);
