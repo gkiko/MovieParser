@@ -5,5 +5,5 @@ import java.util.List;
 
 public interface Parser {
 
-    List parse(String movieName, String imdbId) throws IOException;
+    List<ImoviesEntity> parse(String movieName, String imdbId) throws IOException;
 }

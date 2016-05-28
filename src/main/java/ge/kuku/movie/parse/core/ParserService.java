@@ -2,6 +2,7 @@ package ge.kuku.movie.parse.core;
 
 import ge.kuku.movie.parse.data.CompositeParser;
 import ge.kuku.movie.parse.data.ImoviesEntity;
+import ge.kuku.movie.parse.data.OMDBUtils;
 import ge.kuku.movie.parse.data.Parser;
 
 import javax.validation.Valid;
@@ -12,19 +13,24 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-@Path("parse")
+@Path("movies")
 @Consumes({MediaType.APPLICATION_JSON})
 @Produces({MediaType.APPLICATION_JSON})
 public class ParserService {
 
-    public Parser getParser() {
+    private Parser getParser() {
         return CompositeParser.instance();
     }
 
-    @POST
+    private OMDBUtils getOMOmdbUtils() {
+        return new OMDBUtils();
+    }
+
+    @GET
     @Path("{id}")
-    public List<MovieDo> parse(@PathParam("id") String id, @NotNull @Valid MovieDo movieDo) throws IOException {
-        List<ImoviesEntity> movieList = getParser().parse(movieDo.getName(), id);
+    public List<MovieDo> parse(@PathParam("id") String id) throws IOException {
+        String imdbMovieName = getOMOmdbUtils().getMovieNameById(id);
+        List<ImoviesEntity> movieList = getParser().parse(imdbMovieName, id);
         if (movieList == null) {
             throw new WebApplicationException(404);
         }
@@ -32,7 +38,7 @@ public class ParserService {
         List<MovieDo> doList = new ArrayList<>();
         for (ImoviesEntity imoviesEntity : movieList) {
             MovieDo movieDo1 = imoviesEntity.toMovieDo();
-            movieDo1.setName(movieDo.getName());
+            movieDo1.setName(imdbMovieName);
             movieDo1.setImdbId(id);
             doList.add(movieDo1);
         }
