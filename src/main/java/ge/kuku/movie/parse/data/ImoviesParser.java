@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import org.apache.commons.codec.Charsets;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -13,7 +12,6 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,11 +27,10 @@ public class ImoviesParser implements Parser {
     private static final Pattern containsQualityData = Pattern.compile("(?<=label=\\\")((.*?)(?=\\\"))");
 
     @Override
-    public List parse(String movieName, String imdbId) throws IOException {
+    public List<ImoviesEntity> parse(String movieName, String imdbId) throws IOException {
         List<String> urls = possibleUrlsContaining(movieName);
         String pageUrl = whichPageContains(imdbId, urls);
         String imoviesId = getImoviesId(pageUrl);
-        System.out.println(imoviesId);
         return parseRss(imoviesId);
     }
 
@@ -82,8 +79,8 @@ public class ImoviesParser implements Parser {
         return pageUrl.substring(pageUrl.lastIndexOf("/") + 1);
     }
 
-    private List parseRss(String imoviesId) {
-        List res = null;
+    private List<ImoviesEntity> parseRss(String imoviesId) {
+        List<ImoviesEntity> res = null;
         try {
             String rssText = Unirest.get(RSSAPI).queryString("movie_id", imoviesId).asString().getBody();
             res = getSources(rssText);
@@ -93,7 +90,7 @@ public class ImoviesParser implements Parser {
         return res;
     }
 
-    private List getSources(String rssContent) {
+    private List<ImoviesEntity> getSources(String rssContent) {
         List<ImoviesEntity> movieList = new ArrayList<>();
 
         Matcher matchLinesToParse = containsAllRecords.matcher(rssContent);
@@ -120,8 +117,8 @@ public class ImoviesParser implements Parser {
         return movieList;
     }
 
-    private List getVideoSourceAndLang(String str) {
-        List list = new ArrayList<>();
+    private List<ImoviesEntity> getVideoSourceAndLang(String str) {
+        List<ImoviesEntity> list = new ArrayList<ImoviesEntity>();
         String[] langsAndSources = str.split(",");
         for (String langAndSource : langsAndSources) {
             String[] arr = langAndSource.split("\\|");
