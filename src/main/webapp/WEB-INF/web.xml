@@ -15,7 +15,7 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>movieparser service</servlet-name>
-        <url-pattern>/webapi/*</url-pattern>
+        <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
     <listener>

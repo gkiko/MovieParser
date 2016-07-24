@@ -1,6 +1,4 @@
 import ge.kuku.movie.parse.core.MovieDo;
-import ge.kuku.movie.parse.core.ParserService;
-import ge.kuku.movie.parse.data.CompositeParser;
 import ge.kuku.movie.parse.data.ImoviesEntity;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
@@ -8,15 +6,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class TestParserService extends JerseyTest {
 
@@ -25,32 +19,35 @@ public class TestParserService extends JerseyTest {
 
     @Override
     protected Application configure() {
-        return new ResourceConfig(FakeParseService.class);
+        return new ResourceConfig(FakeParserService.class);
     }
 
     @Test
-    public void expect_400() {
-        Response actual = target("parse/someId").request().post(Entity.entity(null, MediaType.APPLICATION_JSON));
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), actual.getStatus());
-    }
+    public void expect_404() {
+        FakeParser.instance().clear();
 
-    @Test
-    public void expect_400_1() {
-        MovieDo mDo = new MovieDo();
-        Response actual = target("parse/someId").request().post(Entity.entity(mDo, MediaType.APPLICATION_JSON));
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), actual.getStatus());
+        Response actual = target("movies/someId")
+                .request()
+                .get();
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), actual.getStatus());
     }
 
     @Test
     public void correctParams() {
-        CompositeParser.instance().removeAll();
-        FakeParser parser = new FakeParser();
-        parser.addItem("Interstellar", new ImoviesEntity());
-        CompositeParser.instance().add(parser);
+        FakeParser.instance().clear();
 
-        MovieDo mDo = new MovieDo();
-        mDo.setName("Interstellar");
-        MovieDo[] actual = target("parse/tt0816692").request().post(Entity.entity(mDo, MediaType.APPLICATION_JSON)).readEntity(MovieDo[].class);
-        assertFalse(actual.length == 0);
+        ImoviesEntity entity = new ImoviesEntity();
+        entity.setMovieName("Interstellar");
+        entity.setImdbId("tt0816692");
+
+        FakeOmdbClient.instance().setNameToReturn("Interstellar");
+
+        FakeParser.instance().addItem("Interstellar", entity);
+
+        MovieDo[] actual = target("movies/tt0816692")
+                .request()
+                .get()
+                .readEntity(MovieDo[].class);
+        assertTrue(actual.length == 1);
     }
 }
