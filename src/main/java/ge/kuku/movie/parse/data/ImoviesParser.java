@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
 
 public class ImoviesParser implements Parser {
 
-    private static final String JSONAPI = "http://www.imovies.ge/services/films/search_new.json.php?term=";
-    private static final String RSSAPI = "http://www.imovies.ge/get_playlist_jwQ_html5.php";
+    private static final String JSONAPI = "http://www.imovies.cc/services/films/search_new.json.php?term=";
+    private static final String RSSAPI = "http://www.imovies.cc/get_playlist_jwQ_html5.php";
     private static final Pattern containsAllRecords = Pattern.compile(".*<jwplayer:source.*");
     private static final Pattern containsVideoLangData = Pattern.compile("(?<=lang=\\\")((.*?)(?=\\\"))");
     private static final Pattern containsQualityData = Pattern.compile("(?<=label=\\\")((.*?)(?=\\\"))");
@@ -59,7 +59,10 @@ public class ImoviesParser implements Parser {
 
     private boolean find(String imdbId, String url) throws IOException {
         Document doc = Jsoup.connect(url).get();
-        Element div = doc.select(".imdbtop").first();
+        Elements divs = doc.select(".imdbtop");
+        if (divs.isEmpty()) return false;
+
+        Element div = divs.first();
         Elements links = div.select("a[href]");
 
         for (Element link : links) {
@@ -118,7 +121,7 @@ public class ImoviesParser implements Parser {
     }
 
     private List<ImoviesEntity> getVideoSourceAndLang(String str) {
-        List<ImoviesEntity> list = new ArrayList<ImoviesEntity>();
+        List<ImoviesEntity> list = new ArrayList<>();
         String[] langsAndSources = str.split(",");
         for (String langAndSource : langsAndSources) {
             String[] arr = langAndSource.split("\\|");
