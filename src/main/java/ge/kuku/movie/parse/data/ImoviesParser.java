@@ -1,7 +1,5 @@
 package ge.kuku.movie.parse.data;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -11,16 +9,17 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ImoviesParser implements Parser {
 
-    private static final String JSONAPI = "http://www.imovies.cc/services/films/search_new.json.php?term=";
+    private static final String SEARCH_ENDPOINT = "http://www.imovies.cc/search";
     private static final String RSSAPI = "http://www.imovies.cc/get_playlist_jwQ_html5.php";
     private static final Pattern containsAllRecords = Pattern.compile(".*<jwplayer:source.*");
     private static final Pattern containsVideoLangData = Pattern.compile("(?<=lang=\\\")((.*?)(?=\\\"))");
@@ -28,27 +27,58 @@ public class ImoviesParser implements Parser {
 
     @Override
     public List<ImoviesEntity> parse(String movieName, String imdbId) throws IOException {
-        List<String> urls = possibleUrlsContaining(movieName);
-        String pageUrl = whichPageContains(imdbId, urls);
+        List<String> urls = getSearchResults(movieName);
+        List<String> redirectedUrls = handleUrlRedirects(urls);
+        String pageUrl = whichPageContains(imdbId, redirectedUrls);
         String imoviesId = getImoviesId(pageUrl);
         return parseRss(imoviesId);
     }
 
-    private List<String> possibleUrlsContaining(String movieName) throws IOException {
-        List<String> urls = new ArrayList<>();
+    private List<String> getSearchResults(String movieName) throws IOException {
+        movieName = URLEncoder.encode(movieName, "UTF-8");
 
-        String urlString = String.format("%s%s", JSONAPI, URLEncoder.encode(movieName, "UTF-8"));
-        URL url = new URL(urlString);
-
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode actualObj = mapper.readTree(url.openStream());
-        for (JsonNode single : actualObj) {
-            urls.add(single.get("url").asText());
+        List<String> searchResults = new ArrayList<>();
+        for (int pageIndex = 1; pageIndex < 3; pageIndex++) {
+            String urlString = String.format("%s?q=%s&page=%s",
+                    SEARCH_ENDPOINT,
+                    movieName,
+                    pageIndex);
+            searchResults.addAll(getResultItemURLs(urlString));
         }
-        return urls;
+        return searchResults;
+    }
+
+    private List<String> getResultItemURLs(String url) throws IOException {
+        Document doc = Jsoup.connect(url).get();
+        Elements divs = doc.select(".media_column");
+        if (divs.isEmpty()) return Collections.emptyList();
+
+        return divs.stream()
+                .map(div -> div.select("a[href]").first().attr("abs:href"))
+                .collect(Collectors.toList());
+    }
+
+    private List<String> handleUrlRedirects(List<String> urls) {
+        return urls.parallelStream().map(url -> {
+            try {
+                Document doc = Jsoup.connect(url).get();
+                Element script = doc.select("script").last();
+                String scriptContent = script.html();
+
+                String movieName = scriptContent.substring(
+                        scriptContent.lastIndexOf('/'),
+                        scriptContent.lastIndexOf('\''));
+                return url + movieName;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }).collect(Collectors.toList());
     }
 
     private String whichPageContains(String imdbId, List<String> urls) throws IOException {
+//        find(imdbId, urls.get(0));
+
         for (String url : urls) {
             if (find(imdbId, url)) {
                 return url;
@@ -79,7 +109,8 @@ public class ImoviesParser implements Parser {
 
     private String getImoviesId(String pageUrl) {
         if (pageUrl == null) return null;
-        return pageUrl.substring(pageUrl.lastIndexOf("/") + 1);
+        String[] tokens = pageUrl.split("/");
+        return tokens[tokens.length - 2];
     }
 
     private List<ImoviesEntity> parseRss(String imoviesId) {

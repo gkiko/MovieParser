@@ -27,6 +27,9 @@ public class ParserService {
     @Path("{id}")
     public List<MovieDo> parse(@PathParam("id") String id) throws Exception {
         String imdbMovieName = getOmdbClient().getMovieNameById(id);
+        if (imdbMovieName == null) {
+            throw new WebApplicationException(404);
+        }
         List<ImoviesEntity> movieList = getParser().parse(imdbMovieName, id);
         if (movieList == null || movieList.isEmpty()) {
             throw new WebApplicationException(404);

@@ -12,7 +12,9 @@ public class OmdbClient {
         String jsonBody = Unirest.get(OMDB_API).queryString("i", imdbId).asString().getBody();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode actualObj = mapper.readTree(jsonBody);
-        return actualObj.get("Title").asText();
+        JsonNode titleNode = actualObj.get("Title");
+
+        return titleNode == null ? null : titleNode.asText();
     }
 
 }
