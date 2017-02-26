@@ -28,8 +28,7 @@ public class ImoviesParser implements Parser {
     @Override
     public List<ImoviesEntity> parse(String movieName, String imdbId) throws IOException {
         List<String> urls = getSearchResults(movieName);
-        List<String> redirectedUrls = handleUrlRedirects(urls);
-        String pageUrl = whichPageContains(imdbId, redirectedUrls);
+        String pageUrl = whichPageContains(imdbId, urls);
         String imoviesId = getImoviesId(pageUrl);
         return parseRss(imoviesId);
     }
@@ -58,27 +57,7 @@ public class ImoviesParser implements Parser {
                 .collect(Collectors.toList());
     }
 
-    private List<String> handleUrlRedirects(List<String> urls) {
-        return urls.parallelStream().map(url -> {
-            try {
-                Document doc = Jsoup.connect(url).get();
-                Element script = doc.select("script").last();
-                String scriptContent = script.html();
-
-                String movieName = scriptContent.substring(
-                        scriptContent.lastIndexOf('/'),
-                        scriptContent.lastIndexOf('\''));
-                return url + movieName;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }).collect(Collectors.toList());
-    }
-
     private String whichPageContains(String imdbId, List<String> urls) throws IOException {
-//        find(imdbId, urls.get(0));
-
         for (String url : urls) {
             if (find(imdbId, url)) {
                 return url;
@@ -88,20 +67,18 @@ public class ImoviesParser implements Parser {
     }
 
     private boolean find(String imdbId, String url) throws IOException {
-        Document doc = Jsoup.connect(url).get();
+        Document doc = Jsoup.connect(url).followRedirects(true).get();
         Elements divs = doc.select(".imdbtop");
         if (divs.isEmpty()) return false;
 
         Element div = divs.first();
         Elements links = div.select("a[href]");
 
-        for (Element link : links) {
-            String strLink = link.attr("href");
-            if (strLink.contains("imdb.com/title")) {
-                String foundId = strLink.substring(strLink.lastIndexOf("/") + 1);
-                if (foundId.equals(imdbId)) {
-                    return true;
-                }
+        String strLink = links.first().attr("href");
+        if (strLink.contains("imdb.com/title")) {
+            String foundId = strLink.substring(strLink.lastIndexOf("/") + 1);
+            if (foundId.equals(imdbId)) {
+                return true;
             }
         }
         return false;
@@ -110,7 +87,7 @@ public class ImoviesParser implements Parser {
     private String getImoviesId(String pageUrl) {
         if (pageUrl == null) return null;
         String[] tokens = pageUrl.split("/");
-        return tokens[tokens.length - 2];
+        return tokens[tokens.length - 1];
     }
 
     private List<ImoviesEntity> parseRss(String imoviesId) {
